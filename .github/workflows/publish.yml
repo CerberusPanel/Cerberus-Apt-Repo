@@ -1,0 +1,69 @@
+name: Publish APT repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: AppStoreFileBuilder GitHub Release tag, for example v0.2.0
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install archive tools
+        run: sudo apt-get update && sudo apt-get install --yes apt-utils dpkg-dev gnupg
+
+      - name: Download release package
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_REPOSITORY_TOKEN || github.token }}
+        run: |
+          mkdir incoming
+          gh release download "${{ inputs.release_tag }}" \
+            --repo ryvor/AppStoreFileBuilder \
+            --pattern '*.deb' \
+            --dir incoming
+
+      - name: Import archive signing key
+        env:
+          PRIVATE_KEY: ${{ secrets.APT_REPO_GPG_PRIVATE_KEY }}
+          PASSPHRASE: ${{ secrets.APT_REPO_GPG_PASSPHRASE }}
+        run: |
+          test -n "$PRIVATE_KEY"
+          test -n "$PASSPHRASE"
+          printf '%s' "$PRIVATE_KEY" | gpg --batch --import
+          key_id=$(gpg --batch --with-colons --list-secret-keys | awk -F: '/^fpr:/ { print $10; exit }')
+          test -n "$key_id"
+          printf 'APT_REPO_GPG_KEY_ID=%s\n' "$key_id" >> "$GITHUB_ENV"
+
+      - name: Build and sign APT repository
+        env:
+          APT_REPO_GPG_PASSPHRASE: ${{ secrets.APT_REPO_GPG_PASSPHRASE }}
+        run: |
+          mkdir -p public
+          ./scripts/build-apt-repository.sh incoming public/apt
+
+      - name: Upload GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: public
+
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

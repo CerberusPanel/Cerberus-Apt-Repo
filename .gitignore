@@ -1,0 +1,9 @@
+# The repository signing key must never be committed.
+*.gpg
+*.pgp
+*.asc
+!README.md
+
+# Generated APT repository output.
+public/
+incoming/
