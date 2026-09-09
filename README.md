@@ -46,8 +46,8 @@ trusts the repository.
 1. In `AppStoreFileBuilder`, build one or more Linux architectures and attach
    every generated `.deb` to the GitHub Release. The archive accepts `amd64`
    and `arm64` packages; Windows `.exe` and AppImage assets are ignored.
-2. In this repository, open **Actions → Publish APT repository → Run workflow**
-   and enter the matching GitHub Release tag.
+2. In this repository, open **Actions → Publish APT repository → Run workflow**.
+   The workflow automatically downloads the newest published GitHub Release.
 3. When the workflow completes, users receive the update with `sudo apt update`
    and `sudo apt upgrade`.
 

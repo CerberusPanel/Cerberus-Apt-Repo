@@ -2,11 +2,6 @@ name: Publish APT repository
 
 on:
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: AppStoreFileBuilder GitHub Release tag, for example v0.2.0
-        required: true
-        type: string
 
 permissions:
   contents: read
@@ -35,7 +30,7 @@ jobs:
           GH_TOKEN: ${{ secrets.UPSTREAM_REPOSITORY_TOKEN || github.token }}
         run: |
           mkdir incoming
-          gh release download "${{ inputs.release_tag }}" --repo CerberusPanel/cerberus-store-builder --pattern '*.deb' --dir incoming
+          gh release download --repo CerberusPanel/cerberus-store-builder --pattern '*.deb' --dir incoming
 
       - name: Import archive signing key
         env:
