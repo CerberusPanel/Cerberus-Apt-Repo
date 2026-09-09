@@ -11,10 +11,8 @@ and repository definition once:
 
 ```sh
 sudo install -d -m 0755 /etc/apt/keyrings
-sudo wget -O /etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp \
-  https://ryvor.github.io/Cerberus-Apt-Repo/apt/cerberus-store-builder-archive-keyring.pgp
-echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp] https://ryvor.github.io/Cerberus-Apt-Repo/apt stable main' \
-  | sudo tee /etc/apt/sources.list.d/cerberus-store-builder.list
+sudo wget -O /etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp https://CerberusPanel.github.io/Cerberus-Apt-Repo/apt/cerberus-store-builder-archive-keyring.pgp
+echo 'deb [signed-by=/etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp] https://ryvor.github.io/Cerberus-Apt-Repo/apt stable main' | sudo tee /etc/apt/sources.list.d/cerberus-store-builder.list
 sudo apt update
 sudo apt install cerberus-store-builder
 ```
@@ -27,7 +25,7 @@ sudo apt install cerberus-store-builder
    - `APT_REPO_GPG_PRIVATE_KEY`: ASCII-armoured private key export.
    - `APT_REPO_GPG_PASSPHRASE`: passphrase for that key.
    - `UPSTREAM_REPOSITORY_TOKEN`: a fine-grained token with read-only Contents
-     access to `ryvor/AppStoreFileBuilder`; required only if that repository is
+     access to `CerberusPanel/cerberus-store-builder`; required only if that repository is
      private.
 
 Create and export a dedicated key locally:
@@ -45,8 +43,9 @@ trusts the repository.
 
 ## Publishing a release
 
-1. In `AppStoreFileBuilder`, run `npm run build:linux` and create a GitHub
-   Release with the generated `amd64.deb` attached.
+1. In `AppStoreFileBuilder`, build one or more Linux architectures and attach
+   every generated `.deb` to the GitHub Release. The archive accepts `amd64`
+   and `arm64` packages; Windows `.exe` and AppImage assets are ignored.
 2. In this repository, open **Actions → Publish APT repository → Run workflow**
    and enter the matching GitHub Release tag.
 3. When the workflow completes, users receive the update with `sudo apt update`

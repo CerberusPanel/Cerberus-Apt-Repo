@@ -12,33 +12,42 @@ rm -rf "$output_dir"
 mkdir -p "$output_dir/pool/$component/c"
 
 found=0
+architectures=
 for package in "$input_dir"/*.deb; do
     [ -f "$package" ] || continue
     name=$(dpkg-deb -f "$package" Package)
     architecture=$(dpkg-deb -f "$package" Architecture)
     [ "$name" = cerberus-store-builder ] || continue
-    [ "$architecture" = amd64 ] || {
+    case "$architecture" in
+        amd64|arm64) ;;
+        *)
         echo "unsupported architecture in $package: $architecture" >&2
         exit 1
-    }
+        ;;
+    esac
     mkdir -p "$output_dir/pool/$component/c/$name"
     cp "$package" "$output_dir/pool/$component/c/$name/"
+    architectures="$architectures $architecture"
     found=1
 done
 
 [ "$found" -eq 1 ] || {
-    echo "no cerberus-store-builder amd64 .deb found in $input_dir" >&2
+    echo "no supported cerberus-store-builder .deb found in $input_dir" >&2
     exit 1
 }
 
-index_dir="$output_dir/dists/$suite/$component/binary-amd64"
-mkdir -p "$index_dir"
-(
-    cd "$output_dir"
-    dpkg-scanpackages --arch amd64 "pool/$component" /dev/null > "$index_dir/Packages"
-)
-gzip -9n -c "$index_dir/Packages" > "$index_dir/Packages.gz"
-xz -9e -c "$index_dir/Packages" > "$index_dir/Packages.xz"
+architectures=$(printf '%s\n' "$architectures" | tr ' ' '\n' | sed '/^$/d' | sort -u | tr '\n' ' ' | sed 's/[[:space:]]*$//')
+for architecture in $architectures; do
+    index_dir="$output_dir/dists/$suite/$component/binary-$architecture"
+    mkdir -p "$index_dir"
+    (
+        cd "$output_dir"
+        dpkg-scanpackages --arch "$architecture" "pool/$component" /dev/null \
+            > "dists/$suite/$component/binary-$architecture/Packages"
+    )
+    gzip -9n -c "$index_dir/Packages" > "$index_dir/Packages.gz"
+    xz -9e -c "$index_dir/Packages" > "$index_dir/Packages.xz"
+done
 
 release_dir="$output_dir/dists/$suite"
 apt-ftparchive \
@@ -46,7 +55,7 @@ apt-ftparchive \
     -o "APT::FTPArchive::Release::Label=Cerberus" \
     -o "APT::FTPArchive::Release::Suite=$suite" \
     -o "APT::FTPArchive::Release::Codename=$suite" \
-    -o "APT::FTPArchive::Release::Architectures=amd64" \
+    -o "APT::FTPArchive::Release::Architectures=$architectures" \
     -o "APT::FTPArchive::Release::Components=$component" \
     -o "APT::FTPArchive::Release::Description=Cerberus application repository" \
     release "$release_dir" > "$release_dir/Release"

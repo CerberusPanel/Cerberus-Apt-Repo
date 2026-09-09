@@ -35,10 +35,7 @@ jobs:
           GH_TOKEN: ${{ secrets.UPSTREAM_REPOSITORY_TOKEN || github.token }}
         run: |
           mkdir incoming
-          gh release download "${{ inputs.release_tag }}" \
-            --repo ryvor/AppStoreFileBuilder \
-            --pattern '*.deb' \
-            --dir incoming
+          gh release download "${{ inputs.release_tag }}" --repo CerberusPanel/cerberus-store-builder --pattern '*.deb' --dir incoming
 
       - name: Import archive signing key
         env:
