@@ -42,7 +42,7 @@ for architecture in $architectures; do
     mkdir -p "$index_dir"
     (
         cd "$output_dir"
-        dpkg-scanpackages --arch "$architecture" "pool/$component" /dev/null \
+        dpkg-scanpackages --multiversion --arch "$architecture" "pool/$component" /dev/null \
             > "dists/$suite/$component/binary-$architecture/Packages"
     )
     gzip -9n -c "$index_dir/Packages" > "$index_dir/Packages.gz"

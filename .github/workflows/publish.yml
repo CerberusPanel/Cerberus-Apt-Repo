@@ -2,6 +2,10 @@ name: Publish APT repository
 
 on:
   workflow_dispatch:
+  schedule:
+    # Daily at 03:17 UTC. Avoid the top of the hour, when GitHub may delay
+    # scheduled workflows during periods of high load.
+    - cron: '17 3 * * *'
 
 permissions:
   contents: read
@@ -25,12 +29,21 @@ jobs:
       - name: Install archive tools
         run: sudo apt-get update && sudo apt-get install --yes apt-utils dpkg-dev gnupg
 
-      - name: Download release package
+      - name: Download packages from all published releases
         env:
           GH_TOKEN: ${{ secrets.UPSTREAM_REPOSITORY_TOKEN || github.token }}
         run: |
           mkdir incoming
-          gh release download --repo CerberusPanel/cerberus-store-builder --pattern '*.deb' --dir incoming
+          gh api --paginate \
+            'repos/CerberusPanel/cerberus-store-builder/releases?per_page=100' \
+            --jq '.[] | select(.draft == false) | .tag_name' \
+            | while IFS= read -r tag; do
+                gh release download "$tag" \
+                  --repo CerberusPanel/cerberus-store-builder \
+                  --pattern '*.deb' \
+                  --dir incoming \
+                  --clobber
+              done
 
       - name: Import archive signing key
         env:

@@ -47,13 +47,41 @@ trusts the repository.
    every generated `.deb` to the GitHub Release. The archive accepts `amd64`
    and `arm64` packages; Windows `.exe` and AppImage assets are ignored.
 2. In this repository, open **Actions → Publish APT repository → Run workflow**.
-   The workflow automatically downloads the newest published GitHub Release.
+   The workflow downloads the `.deb` assets from every published GitHub Release
+   and rebuilds the archive with the complete version history.
 3. When the workflow completes, users receive the update with `sudo apt update`
    and `sudo apt upgrade`.
 
-The workflow publishes only the newest package version. This is intentional for
-a small single-package archive; clients already holding an older version can
-still upgrade normally.
+The workflow also runs automatically every day at **03:17 UTC**, so publishing
+a GitHub Release is normally all that is required. Use the manual workflow run
+when you want the APT repository updated immediately.
+
+### Installing a specific version or rolling back
+
+The archive retains every version attached to a published GitHub Release. List
+the available versions with:
+
+```sh
+apt list -a cerberus-store-builder
+```
+
+Install a specific version using the exact version shown by APT:
+
+```sh
+sudo apt install cerberus-store-builder=1.0.0~beta~1
+```
+
+Electron Builder converts prerelease hyphens to Debian's `~` version separator,
+so the GitHub release `v1.0.0-beta-1` is shown to APT as
+`1.0.0~beta~1`. To stay on a rolled-back version, hold the package:
+
+```sh
+sudo apt-mark hold cerberus-store-builder
+```
+
+Use `sudo apt-mark unhold cerberus-store-builder` when upgrades should resume.
+Do not delete old GitHub Releases or their `.deb` assets while you want users
+to be able to install those versions.
 
 ## Adding more Cerberus applications
 
