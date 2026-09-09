@@ -9,13 +9,14 @@ key_id=${APT_REPO_GPG_KEY_ID:?APT_REPO_GPG_KEY_ID must name the signing key}
 passphrase=${APT_REPO_GPG_PASSPHRASE:?APT_REPO_GPG_PASSPHRASE must contain the signing-key passphrase}
 
 rm -rf "$output_dir"
-mkdir -p "$output_dir/pool/$component/c"
+mkdir -p "$output_dir/pool/$component"
 
 found=0
 architectures=
 for package in "$input_dir"/*.deb; do
     [ -f "$package" ] || continue
     name=$(dpkg-deb -f "$package" Package)
+    version=$(dpkg-deb -f "$package" Version)
     architecture=$(dpkg-deb -f "$package" Architecture)
     [ "$name" = cerberus-store-builder ] || continue
     case "$architecture" in
@@ -25,8 +26,7 @@ for package in "$input_dir"/*.deb; do
         exit 1
         ;;
     esac
-    mkdir -p "$output_dir/pool/$component/c/$name"
-    cp "$package" "$output_dir/pool/$component/c/$name/"
+    cp "$package" "$output_dir/pool/$component/${name}_${version}_${architecture}.deb"
     architectures="$architectures $architecture"
     found=1
 done

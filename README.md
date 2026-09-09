@@ -12,7 +12,7 @@ and repository definition once:
 ```sh
 sudo install -d -m 0755 /etc/apt/keyrings
 sudo wget -O /etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp https://CerberusPanel.github.io/Cerberus-Apt-Repo/apt/cerberus-store-builder-archive-keyring.pgp
-echo 'deb [signed-by=/etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp] https://ryvor.github.io/Cerberus-Apt-Repo/apt stable main' | sudo tee /etc/apt/sources.list.d/cerberus-store-builder.list
+echo 'deb [signed-by=/etc/apt/keyrings/cerberus-store-builder-archive-keyring.pgp] https://CerberusPanel.github.io/Cerberus-Apt-Repo/apt stable main' | sudo tee /etc/apt/sources.list.d/cerberus-store-builder.list
 sudo apt update
 sudo apt install cerberus-store-builder
 ```
@@ -54,3 +54,41 @@ trusts the repository.
 The workflow publishes only the newest package version. This is intentional for
 a small single-package archive; clients already holding an older version can
 still upgrade normally.
+
+## Adding more Cerberus applications
+
+APT repositories can publish many applications from the same URL. Users add
+this repository once, then install each application by its package name:
+
+```sh
+sudo apt install cerberus-store-builder
+sudo apt install cerberus-panel
+```
+
+Each application must have a unique lowercase package name and publish its own
+GitHub Release containing one `.deb` for each supported Linux architecture.
+For example, a release may attach both an `amd64` and an `arm64` package. Do
+not attach Windows installers or AppImages to the APT publication process;
+they can remain GitHub Release assets but are not APT packages.
+
+### Current repository limitation
+
+This initial publisher intentionally supports only `cerberus-store-builder`.
+It rebuilds a single-package archive, so it must be upgraded before a second
+application is published. Do not attempt to publish another package with the
+current workflow: it will reject a different package name.
+
+### Before publishing the second app
+
+1. Update the repository publisher to maintain a catalogue of applications and
+   preserve every current package when a new release is added.
+2. Register the new application's GitHub repository, release tag, and package
+   name in that catalogue.
+3. Build and attach the new application's Linux `.deb` assets to its GitHub
+   Release.
+4. Run the APT publisher. It will download all registered application releases,
+   regenerate the shared package indexes, and sign the updated archive with the
+   existing Cerberus APT signing key.
+
+No new user repository setup or signing key is needed when adding applications;
+existing users only run `sudo apt update` and install the new package by name.
